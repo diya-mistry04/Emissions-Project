@@ -1,0 +1,382 @@
+---
+title: "DJ_CAAS-Report"
+author: Adam Bondi, Ashrey Mathews, Diya Mistry, Jeevin Pal, Siddhesh Puwar, Carson
+  Yee
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_notebook: default
+  slidy_presenttion: default
+  word_document: default
+  html_document: default
+editor_options:
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(magrittr)
+library(modelr)
+library(dplyr)
+library(readxl)
+library(lubridate)
+library(maps)
+```
+
+```{r, include = FALSE}
+regions <- read_csv("WorldRegions.csv", show_col_types = FALSE)
+happiness_score <- read_csv("WorldHappinessReport2022-Score.csv", show_col_types = FALSE)
+monthly_ice_cap <- read_xlsx("Sea_Ice_Index_Monthly_Data_by_Year_G02135_v3.0.xlsx")
+monthly_rate_change <- read_xlsx("Sea_Ice_Index_Rates_of_Change_G02135_v3.0.xlsx")
+Emissions <- read_csv("INT-Export-Emissions-09-09-2022_23-18-25.csv", skip=1, show_col_types = FALSE)
+electricity <- read_csv("INT-Export-Electricity-09-09-2022_23-11-57.csv", skip=1, show_col_types = FALSE)
+```
+
+
+
+**TEAM NAME: DJ_CAAS**
+
+**Group Leader: Jeevin Pal**
+
+```{r, echo = FALSE}
+group <- tibble(`Last_Name (Family)` = c("Bondi", "Mathews", "Mistry", "Pal", "Puwar","Yee"), `First_Name (Given)` = c("Adam", "Ashrey", "Diya", "Jeevin", "Siddhesh", "Carson"), `Student_ID` = c(169034212, 169030939, 169033002, 169026115, 169029489, 169032720))
+group
+```
+
+
+## DATA100 Project 2022
+
+`Table of Contents`
+
+1.  Introduction
+2.  Data Descriptions
+3.  Descriptive Statistics
+4.  Discussion
+5.  Conclusion
+
+### Introduction
+
+The increase of natural disasters across the globe are proven to be linked with human activity and struggles. Despite the proof of this statement in the past, some individuals are still unsure if human actions are the main cause on this everlasting global issue. Our goal with this project is to understand the leading cause of climate change. With this report, we are trying to diagnose whether the main cause is related to humans and their emissions or if climate change is inevitable. We are tasked to tidy data from the given options using our current knowledge of the course and RStudio. With the tidy data, we must analyze trends and patterns in each data set to help enrich our final report on climate change trends over the last 44 years. In our analysis, we will use `INT-Export-Emissions-09-09-2022_23-18-25` and `INT-Export-Electricity-09-09-2022_23-11-57` to compare potential factors of interest relating to the sources of climate change. To further our analysis, we will include the `WorldHappinessReport2022-Score`, which lists world happiness scores from 2018-2020 and `WorldRegions`, which allows us to develop an understanding of the most delighted nations. Finally, we will use `Sea_Ice_Index_Monthly_Data_by_Year_G02135_v3.0` and `Sea_Ice_Index_Rates_of_Change_G02135_v3.0` to see if there is a connection between annual emissions and sea ice index levels across the Northern Hemisphere. We will be comparing 4 countries in our analysis, Canada, the United Kingdom, China and the United States. We will compare their overall happiness, their total emissions and their modes of electricity production by year to further understand the changes in the sea ice index. Given these four countries' happiness score, we predict that Canada would produce the least amount of emissions and will have the most sustainable mode of electricity production compared to China which have a higher output of emissions in addition to a unsustainable mode of electricity production. By tidying this data we will discuss how our climate is affected by communities and populations with the correlations of our data sets.
+
+### **Data Descriptions**
+
+### World Regions
+We combined two data sets to give readers a clear regional background of 146 nations with a happiness ranking:  
+
+To regionalize our data, we used `WorldRegions.csv`. After tidying the dataset, we were able to create three simple columns. First, `country` simply labels the country name of the 249 available. `region` divides each column into a geographic/geopolitical location. These locations include Africa, Arab States, Asia & Pacific, Europe, Middle east, North America, and South/Latin America. Finally, we created a variable called `Hemisphere` which outlines which hemisphere the land lies on. This data serves as the basis for understanding climate factors. After conducting research, we return to this dataset to differentiate such regions based on energy and emissions factors.
+
+### World Happiness
+
+Another dataset used in this project is `WorldHappinessReport2022-Score.csv`. This dataset compares the happiness levels of 146 nations. The report contains answers from 2019-2021 using computer results of a simple question: “Please imagine a ladder, with steps numbered from 0 at the bottom to 10 at the top. The top of the ladder represents the best possible life for you and the bottom of the ladder represents the worst possible life for you. On which step of the ladder would you say you personally feel you stand at this time?” Researchers then conduct analysis based on the answers to create a score of one single interpretation of happiness. This interpretation is unequally divided with the following factors: GDP per capita, social support, healthy life expectancy, freedom to make life choices, generosity, perceptions of corruption, dystopia + residual, and a 95% confidence interval. This report groups regions by happiness and dissects what is causing these happiness levels. By analyzing emissions and energy in relation to increasing sea ice levels we are essentially creating a new variable that goes would go into the happiness interpretation. 
+
+
+### Sea Ice Index:
+
+1.  Monthly Index by Year
+* Sea ice levels are common on the topic of climate change which is seen on the media and the news. We will be looking at `Sea_Ice_Index_Monthly_Data_by_Year_G02135_v3.0` to relate human emissions and their energy consumption per country with the annual change of the sea ice index. This data set demonstrates the trends of the sea ice index by month over the last 44 years with an average index at the end of each year in the Northern Hemisphere. Either numerically or graphically, it is evident that the ice index levels have been declining at a steady rate over the years, but it is still unsure if human actions play a role in this issue. Prior to tidying the data, the data set contained 15 variables, but evidently not all of them were useful or tidy. The first variable labelled “...1” of type double, is a list of years from year 1978 to 2022, but some of them include NA values. The following 12 variables are the months in a year as type double, and the observations under each month are the sea ice index levels in the corresponding month and year. In the data set, there is also a variable that is filled with empty observations called “… 14” as type logical that need to be removed in order to be tidy. The names of these variables, “...1” and “...14” are essentially their position in the Tibble. The last variable is labeled Annual, which is the average level of the sea ice index at the end of the corresponding year, and it is of type double. The information provided by this data alone is evident that there is a decrease in ice index levels in the Northern Hemisphere, but it still does not resolve our major concern if human actions are the reason because of this shrinkage. To further our reasoning, we will use other data sets to look in more depth. 
+
+2.  Index Rates of Change
+* The dataset `Sea_Ice_Index_Rates_of_Change_G02135_v3.0`  provides information on how quickly ice melts over time.  The dataset is broken up into four parts. The first one is ‘Ice change in Mkm^2 per month’. The second one is 'Ice change in km^2 per day'. The third one is 'Ice change in mi^2 per month'. Lastly, the fourth one is 'Ice change in mi^2 per day'. The rates of these ice changes are organized by countries around the world from the years 1979-2022. Before tidying the data set, the data set contained 14 variables, but not all of them were useful or tidy. The first row of the data set had NA values. To deal with this, the function “is.na” came in handy to deal with this issue. After taking out the NA values, the first variable was called “['Ice change in Mkm^2 per month', 'Ice change in km^2 per day', 'Ice change in mi^2 per month', 'Ice change in mi^2 per day'] from 5-day averaged daily values", which contained the years. The second variable was called “...2”, which represented the first month of the year, January. This number went up to “...13”, which represents December. The first variable was renamed to “Year”, the second variable, “...2”, was renamed to January, and the rest was renamed to the corresponding month of the year. 
+
+### Electricity
+
+The dataset on electricity provides information on each country's source of electricity (in billion kWh) over the years of 1980 to 2021. The variables in the dataset are listed as numeric however the ‘Countries’ variable is a character. The variable names in the dataset are Generation, Nuclear, Fossil fuels, Renewable, Hydroelectricity, Non-hydroelectric renewables, Geothermal, Solar/Tide/Wave/Fuel cell, Tide/Wave, Solar, Wind, Biomass/Waste, Hydroelectric pumped, Consumption, Imports, Exports, Net imports, Capacity and Distribution losses. Analyzing data about electricity over the years is very important since in today's time, people are being more conscious about conserving resources to reduce climate change and overall be better for the environment. Various sources of energy are better than others. By extracting information from the dataset, we can use it to figure out how the various sources of energy are impacting climate change throughout the years. 
+
+### Emissions
+
+To analyze climate change around the world, we are using the Emissions dataset which reports rates of CO2 emissions, coal and coke emissions, petroleum, and other liquids, and consumed natural gas. The rates of these emissions are organized by countries around the world from the years 1949-2019; for many of these countries however, data was only collected after 1980. The original imported dataset consisted of variables: “...2” (representing the second column) which contained both countries and emission types in a single variable of type “character”. The dataset also includes individual variables for all years between 1949 and 2019. The years 1949-1979 are of type “double”, however from 1980-2019, the data is of type “character”. CO2 emissions refer to overall carbon dioxide emissions (no explicit source of CO2). However, coal and coke emissions are CO2 emissions sources directly from burning coal and coke as a source of fuel. Natural gas may include water vapor, ethane, hydrogen sulfide, etc. They are popularly used for heating and generating electricity for homes, especially in the United States. Finally, petroleum and other liquids consist of propane, oils, diesel, crude oil, etc.
+
+## **Descriptive Statistics**
+
+### World Regions and Global Happiness Scores
+```{r, echo=FALSE}
+tidy_regions <- regions %>%
+  separate(`Country	Region	Global South`, into = c("Country", "Region", "Hemisphere"), sep = " \t") 
+tidy_regions <- tidy_regions[-c(1), ] 
+tidy_regions <- tidy_regions %>%
+  arrange(Country)
+```
+
+```{r}
+tidy_regions
+```
+
+```{r, echo=FALSE}
+happiness_score$RANK <- as.integer(happiness_score$RANK) 
+tidy <- full_join(tidy_regions, happiness_score) 
+tidy <- tidy[!is.na(tidy$RANK),] %>%
+  arrange(RANK)
+```
+
+```{r}
+tidy
+```
+
+```{r, echo = FALSE}
+ggplot(data=tidy, mapping = aes(x =Region, y = `Happiness score`)) +
+  geom_boxplot(mapping = aes(color= Hemisphere)) + coord_flip() + ggtitle("World Happiness Based on Regions")
+```
+
+
+```{r, echo = FALSE}
+hs_mean <- mean(tidy$`Happiness score`) 
+```
+**Mean: 5.553575**
+
+```{r, echo = FALSE}
+outlier1 <- tidy %>%  
+  filter(Region == "Asia & Pacific") %>%  
+  arrange(`Happiness score`) 
+# Outlier = Afghanistan 
+
+outlier2 <- tidy %>%  
+  filter(Region == "Arab States") %>%  
+  arrange(desc(`Happiness score`)) 
+# Outlier = Bahrain 
+```
+**Region: Asia & Pacific**
+
+Outlier: Afghanistan
+
+
+**Region: Arab States**
+
+Outlier: Bahrain
+
+This boxplot allows us to differentiate regions by their happiness scores.  The NA region includes countries with a happiness score but no corresponding region. According to the boxplot, the northern hemisphere regions of North America, Europe, and Asia & Pacific have the highest average happiness scores among their members. The boxplot also identified two outliers; one in the Southern Hemisphere of Asia & Pacific, and another in the Arab States. After investigating these states, we can see that Bahrain is not as pressured by climate change as its main concern is rising sea levels. In contrast, Afghanistan is vulnerable to climate change due to its geography and infrastructure. Afghanistan’s climate means climate change can lead to massive droughts. This constant environmental worry leads to a low happiness score. 
+```{r, echo = FALSE}
+other <- tidy %>%  
+  filter(Country==c("United Kingdom", "China")) 
+
+northA <- tidy %>%
+  filter(Country==c("Canada", "United States")) 
+```
+
+```{r}
+other
+northA 
+```
+
+Regarding the upcoming analysis, we have decided to focus on Canada, United States, China, and the United Kingdom. Concerning each country, their happiness scores and regions are listed above. Their use of renewable energy and emissions are discussed in the sections `Emissions` and `Electricity` which analyze these results. 
+
+## Sea Index Levels By Month
+
+```{r, echo = FALSE}
+monthly_ice_cap_2 <- monthly_ice_cap %>%
+  filter(!is.na(January), !is.na(February), !is.na(March), !is.na(April), !is.na(May), !is.na(June), !is.na(July), !is.na(August), !is.na(September), !is.na(October), !is.na(November), !is.na(December)) %>%
+  select("...1", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", "Annual" ) %>%
+  rename("Year" = "...1")
+```
+
+```{r, echo = FALSE}
+monthly_ice_cap_3 <- monthly_ice_cap_2 %>%
+  pivot_longer(c("January":"December"), names_to = "Month", values_to = "Ice_Index") %>%
+  select("Year", "Month", "Ice_Index", "Annual")
+```
+
+```{r}
+monthly_ice_cap_3
+```
+
+
+```{r, echo = FALSE}
+ggplot(data = monthly_ice_cap_3)+ geom_point(mapping = aes(x = Year, y = Ice_Index, colour = Year))+ facet_wrap(~Month)+ ggtitle("The Sea Ice Index Per Year")
+```
+
+This graph looks at the yearly sea ice index per year from 1980 and it is evident that the index levels are decreasing at a steady rate. The sea ice index peaks during March and is at its lowest around September because the Arctic lags in the transition between season changes compared to the rest of the world. Even though it is lowest in September, the sea ice index levels are constantly low in the summer season and relatively high in the winter months.
+
+#### **Rates of Change of The Sea Index**
+
+```{r, echo = FALSE}
+monthly_rate_change2 <- monthly_rate_change %>%
+  filter(!is.na(...2), !is.na(...3), !is.na(...4), !is.na(...5), !is.na(...6), !is.na(...7), !is.na(...8), !is.na(...9), !is.na(...10), !is.na(...11), !is.na(...12), !is.na(...13)) %>%
+  select("['Ice change in Mkm^2 per month', 'Ice change in km^2 per day', 'Ice change in mi^2 per month', 'Ice change in mi^2 per day'] from 5-day averaged daily values", "...2", "...3", "...4", "...5", "...6", "...7", "...8", "...9", "...10", "...11", "...12", "...13") %>% 
+  rename("Year" = "['Ice change in Mkm^2 per month', 'Ice change in km^2 per day', 'Ice change in mi^2 per month', 'Ice change in mi^2 per day'] from 5-day averaged daily values", "January"="...2", "February"="...3", "March"="...4", "April"="...5", "May"="...6", "June"="...7", "July"="...8", "August"="...9", "September"="...10", "October"="...11", "November"="...12", "December"="...13") 
+```
+
+```{r, echo = FALSE}
+monthly_rate_change2 <- monthly_rate_change2[-c(1),] %>%
+  pivot_longer(c("January":"December"), names_to="Month", values_to="Ice_Change")
+```
+
+```{r}
+monthly_rate_change2
+```
+
+```{r, echo = FALSE}
+monthy_rate_change2 <- monthly_rate_change2 %>%
+  filter(Year >= 2010)
+ggplot(data = monthly_rate_change2) + geom_point(mapping=aes(x = suppressWarnings(as.integer(monthly_rate_change2$Year)), y =  suppressWarnings(as.integer(monthly_rate_change2$Ice_Change)))) + xlab("Year") + ylab("Ice Change") + ylim(-2,2) + facet_wrap(~Month) + ggtitle("The Sea Ice Change Per Year")
+```
+
+In this graph, the sea ice change starts from 1980 to 2021 since most of the data was collected in 2010 onwards. The sea ice change increases during October to December because of the season change to winter. The sea ice change is at its lowest during June and July since it is usually the warmest time of the year. In other words, the sea ice change is at its lowest during the peak summer seasons and at its highest during the peak winter seasons. However, months like January, March, and September have no change at all since they are the transition months for the season change. 
+
+#### **Emmissions**
+
+```{r, echo = FALSE}
+Emissions2 <- Emissions[0:-1]
+```
+
+```{r, echo = FALSE}
+Emissions3 <- rename(Emissions2,Source = ...2) 
+```
+
+```{r, echo = FALSE}
+v <- character()
+#for every 6 rows (starting at row 7), append the value to a new column ("countries") 
+for(i in seq(1,nrow(Emissions3),6)) { 
+for (j in seq(1,6)){
+    v[i+j] <- Emissions3[i,1] 
+  } 
+} 
+ v <- v[-1] 
+```
+
+```{r, echo = FALSE}
+Emissions4 <- add_column(Emissions3, .after = 1, v)
+colnames(Emissions4)[2] <- "Location" 
+```
+
+```{r, echo = FALSE}
+Emissions5 <- filter(Emissions4, Source != Location, Source != 'Emissions')
+```
+
+```{r, echo = FALSE}
+Emissions6 <- Emissions5 %>%
+  pivot_longer(c("1949":"1979"), names_to = "Year", values_to = "values") %>%
+  select(Source, Location, Year, values) 
+Emissions6$Year <- suppressWarnings(as.numeric(Emissions6$Year))
+```
+
+```{r, echo = FALSE}
+Emissions7 <- Emissions5 %>%
+  pivot_longer(c("1980":"2019"), names_to = "Year", values_to = "values") %>%
+  select("Source", "Location", "Year", "values") 
+Year <- suppressWarnings(as.numeric(Emissions7$Year))
+Emissions7$values <- suppressWarnings(as.numeric(Emissions7$values))
+```
+
+```{r, echo = FALSE}
+Emissions8 <- Emissions7 %>%
+  pivot_wider(names_from = Source, values_from = values) 
+```
+
+```{r, echo = FALSE}
+Emissions8$Location <- suppressWarnings(as.character(Emissions8$Location))
+```
+
+```{r}
+Emissions8
+```
+
+```{r, echo = FALSE}
+filter(Emissions8, Location == "Canada" | Location == "United States" | Location == "United Kingdom" | Location == "China") %>%
+  ggplot(Emissions8, mapping = aes(x = Year, y = `CO2 emissions (MMtonnes CO2)`, colour = Location)) + geom_line(aes(group=1)) + facet_wrap(~Location) + ggtitle("CO2 Emissions") + theme(axis.text.x = element_text(angle = 60, hjust = 1)) + scale_x_discrete(breaks=seq(1980,2019,by=3))
+
+filter(Emissions8, Location == "Canada" | Location == "United States" | Location == "United Kingdom" | Location == "China") %>%
+  ggplot(Emissions8, mapping = aes(x = Year, y = `Coal and coke (MMtonnes CO2)`, colour = Location)) + geom_line(aes(group=1)) + facet_wrap(~Location) + ggtitle("Coal & Coke Emissions") + theme(axis.text.x = element_text(angle = 60, hjust = 1)) + scale_x_discrete(breaks=seq(1980,2019,by=3))
+```
+
+Since majority of the values were only collected following 1980, we filtered the years to only include 1980-2019 for the highest level of relevance, while still being able to display any significant changes over this time period. The CO2 Emissions graph shows that Canada and the United Kingdom have maintained steady and low levels of C02 emissions over the past 39 years. The United States have also maintained relatively steady emissions approximately between 4500-6000 MMtonnes. Finally, China has shown constantly increasing levels of emissions, with most recently recorded emissions at approximately 10500 MMtonnes. Coal and Coke Emissions show very similar trends, however, the United States reported coal and coke emissions between 1250-2500 MMtonnes.
+
+```{r, echo = FALSE}
+filter(Emissions8, Location == "Canada" | Location == "United States" | Location == "United Kingdom" | Location == "China") %>%
+  ggplot(Emissions8, mapping = aes(x = Year, y = `Consumed natural gas (MMtonnes CO2)`, colour = Location)) + geom_line(aes(group=1)) + facet_wrap(~Location) + ggtitle("Consumed Natural Gas") + theme(axis.text.x = element_text(angle = 60, hjust = 1)) + scale_x_discrete(breaks=seq(1980,2019,by=3))
+```
+
+Natural Gas Consumption has stayed relatively low and steady between 0 and 250 MMtonnes in Canada and the United Kingdom. China started off low in 1980 but has been increasing at an increasing rate since 1992. The United States have shown an inconsistent increase in Consumed Natural Gas with most recently reported rates at nearly 1750 MMtonnes.  
+
+```{r, echo = FALSE}
+filter(Emissions8, Location == "Canada" | Location == "United States" | Location == "United Kingdom" | Location == "China") %>%
+  ggplot(Emissions8, mapping = aes(x = Year, y = `Petroleum and other liquids (MMtonnes CO2)`, colour = Location)) + geom_line(aes(group=1)) + facet_wrap(~Location) + ggtitle("Petroleum & Other Liquids") + theme(axis.text.x = element_text(angle = 60, hjust = 1)) + scale_x_discrete(breaks=seq(1980,2019,by=3))
+```
+
+Finally, Canada and the United Kingdom have maintained consumption of petroleum and other liquids below 500 MMtonnes. Chinas consumption has been increasing at an increasing rate with most recent consumption rates at 1500 MMtonnes. Out of all four countries, the United States have the highest level of consumption with inconsistent rates above 2000 MMtonnes.
+
+#### **Electricity Production**
+
+```{r, echo = FALSE}
+electricity2 <- electricity[0:-1]
+electricity3 <- rename(electricity2, Source = ...2) 
+```
+
+```{r, echo = FALSE}
+v <- double() 
+for (i in seq(1,nrow(electricity3), 32)) { 
+  for (j in seq(1,32)) { 
+    v[i+j] <- electricity3[i,1]
+  } 
+} 
+v <- v[-1] 
+electricity4 <- add_column(electricity3, .after = 1, v)
+colnames(electricity4)[2] <- "Countries" 
+```
+
+```{r, echo = FALSE}
+electricity5 <- filter(electricity4, Source != Countries) 
+electricity6 <- pivot_longer(electricity5, c("1980":"2021"), names_to = "Year", values_to = "Consumption") 
+electricity7 <- pivot_wider(electricity6, names_from = "Source", values_from = "Consumption") 
+```
+
+```{r, echo = FALSE}
+electricity8 <- electricity7 
+for (i in 2:length(electricity8)){ 
+  electricity8[i] = suppressWarnings(as.numeric(unlist(electricity8[i])))
+} 
+```
+
+```{r, echo = FALSE}
+electricity9 <- select(electricity8, c(1:19))
+electricity_final <- electricity9 
+electricity_final$Countries <- suppressWarnings(as.character(electricity_final$Countries))
+```
+
+```{r}
+electricity_final
+```
+
+```{r, echo = FALSE}
+electricity_TOP_GDP <- filter(electricity_final, Countries == "Canada" | Countries == "United States" | Countries == "United Kingdom" | Countries == "China" ) 
+```
+
+```{r, echo = FALSE}
+ggplot(electricity_TOP_GDP, mapping=aes(x=Year, y=100*(`Renewables (billion kWh)`+`Nuclear (billion kWh)`)/`Generation (billion kWh)`)) + geom_line() + facet_wrap(~Countries) + ggtitle("Electricity Generated from Carbon Free Sources") + ylab("Electicity Generated (%)")  
+```
+
+In this graph, it’s being compared between 4 countries, Canada, United States, United Kingdom and China over the years 1980 to 2021. The information being pulled from this data is the electricity generated from carbon emitting sources in percentage by each country. Canada being consistent in using truly little carbon sources to produce their electricity, other countries, especially China and the United States are still relatively reliant on using carbon sources to generate electricity. The UK has been mainly using carbon from the years 1980 to 2017 then significantly dropped after that.   
+
+```{r, echo = FALSE}
+ggplot(electricity_TOP_GDP, mapping=aes(x=Year, y=100*(`Fossil fuels (billion kWh)`)/`Generation (billion kWh)`)) + geom_line() + facet_wrap(~Countries) + ggtitle("Electricity Generated from Carbon-emitting Sources") + ylab("Electicity Generated (%)") 
+```
+
+In this graph, it’s being compared between 4 countries, Canada, United States, United Kingdom and China over the years 1980 to 2021. The information being pulled from this data is the electricity generated from carbon-free sources in percentage by each country. Canada has always been high in using carbon-free sources to produce their electricity, other countries such as China and United States have never shown their efforts to use more carbon-free sources to produce their electricity. The UK has not been using carbon-free sources as their main electricity generation up until the year 2017 then had a significant increase.  
+
+#### Graph Comparison
+
+In comparison between the two groups of graphs, the conclusion that can be pulled is Canada has always been using carbon-free sources as their main method of generating electricity for their country. The United States and China have always been using carbon-emitting sources to generate most of their electricity and they continue that trend. The UK from the years 1980 to 2017 has been using carbon-emitting sources as their main method of generating electricity, however, in the following years they made a switch in how they generate electricity. The UK switched from carbon-emitting to carbon-free and they continue the trend of using more carbon-free and less carbon-emitting sources. 
+
+### **Discussion**
+
+Lindsey, Rebecca and Scott, Michon. (2022). Climate Change: Arctic Sea Ice Summer Minimum. NOAA Climate.gov,         https://www.climate.gov/news-features/understanding-climate/climate-change-arctic-sea-ice-summer-minimum. 
+
+#### Summary
+
+The Arctic Ocean is a vast stretch of land occupying roughly six million square miles around the North Pole. Thousands of years ago, the surface of the Arctic Ocean remained frozen year-round. Along with this frozen surface was seasonal ice that froze each winter and melted each summer. In September 2022, the area covered by ice is reaching satellite recorded lows. The surface area of the North Pole with year-round ice has drastically decreased. This is a direct cause of climate change and human causes such as emissions. “According to the National Snow and Ice Data Center, the amount of ice that survives the summer melt season has shrunk by 13 percent per decade relative to the 1981–2010 average” (Lindsey, Scott 2022). With constantly declining numbers, it is important to understand how sea ice freezes and melts. 
+
+Similar to ponds and lakes, the surface on the Atlantic Ocean also freezes, forming what is called “sea ice.” Seawater in the oceans has a lower freezing point than fresh water in lakes and ponds due to the difference in salt levels. The area of the sea ice fluctuates over different periods of the year which can be seen by experimentation and shown graphically. The maximum index levels usually occur during early March and reach its minimum when September arrives. The ice that has not endured a full summer season is referred to as first-year-ice, which is more subjectable to completely melting once the next summer arrives. Ice that survives a summer period is more likely to grow stronger and thicker and as a result, they become more likely to survive summer temperatures that often tend to melt first-year-ice. Sea ice is moved by the water currents and as time goes on, it is going to be more likely to be found in warmer waters in the Atlantic Ocean. 
+
+Scientists use various climate proxies like sediment/ice cores, tree rings, and fossilized shells of ocean creatures. These paleoclimate records show that while there have been several periods over the past 1,450 years when sea ice extents expanded and contracted, the decrease during the modern era is unrivaled. Early observations of sea ice coverage in the Arctic come to us both from the oral histories of native populations and from the records of early European mariners. Records of sea ice near the coast of Iceland date back to the 9th century, and records became more routine in the 17th century. British and Russian records of sea ice conditions along sailing routes became routine in the 18th and 19th centuries.  Since continuous satellite-based measurements started in November 1978, satellite data have recorded ongoing decreases. The data shows a trend of more ice melting away during summers and less new ice forming during winters. Ice growth in the Beaufort Gyre roughly offset the flow of ice out of the Arctic via the Fram Strait. Since the start of the 20th century, however, summers in the southern portion of the gyre have been too warm for sea ice to survive. These changes in ice survival mean that even though the sea ice extent at the winter maximum in March has declined more slowly than the extent at summer minimum, the winter ice pack is fundamentally different than it once was.  Having so much of the winter ice cover made up of thin, first year ice creates a feedback loop in which the ice is less likely to survive in the summer. It makes the ice pack particularly vulnerable to big, single-year drops during exceptionally warm or stormy summers, drops that the ice pack is unlikely to recover from in the current climate. In addition, the thin ice is more dangerous for native Arctic people who still practice their traditional way of life, which depends on reliably thick ice for hunting and fishing activities.    
+
+A common term by the name of Arctic amplification, is described as the increase of warming in the Arctic compared to the rest of the world. Arctic amplification aligns with current assumptions and research on greenhouse gas emissions and their negative effects on climate change. There are multiple factors that are caused by Arctic amplification and sea ice loss is one of many. Sea ice has the ability to reflect the harmful sunlight, but it is becoming less effective with the decreases of sea ice. 80 percent of sunlight could be reflected from the white and/or gray surface of the sea ice. However, with the decline of sea ice, ocean water absorbs a significantly more amount of sunlight with leads to the warming of the sea surface and then the melting of the ice. 
+
+While the loss of sea ice may benefit cargo and tourist ships, it does not benefit the climate. In addition to the pollution given off by such large ships, there is an increased risk of oil spills in the Arctic Ocean. As sea ice levels continue to drop, habitats of marine mammals such as polar bears are destroyed, thus disrupting the food supply of the Arctic community. As the duration of ice-free seasons increases, communities are subject to erosion from pounding waves during winter storms. Reflective sea ice is important for the survival of commercially important fish species as it minimizes the rising temperature of the ocean. Finally, scientists reported that as ice-free seasons begin to dominate the arctic, more underwater noise and trash from fishing vessels will be released. 
+
+#### Analysis
+
+We have drawn numerous parallels between the dropping sea ice levels and global climate change. Our research discusses how sea ice levels are impacted by different types of fuels, specifically emissions and electricity. Climates that are most affected by climate change also experience drops in happiness scores as identified in the first dataset because of the changing in their living conditions. For example, Afghanistan is one of the most affected countries due to climate change, despite other nations in the Sothern Hemisphere of Asia & Pacific region. These other nations have relatively high happiness scores; however, Afghanistan holds the lowest recorded happiness score in the world. This makes them a clear outlier in the region. Communities in the lowest-scored regions must deal with increasing temperatures and rising sea levels in addition to existing socioeconomic struggles. Even Bahrain, a positive outlier in the Arab states, with a high happiness score is at risk due to world climate change. They have high emission levels despite their relatively low population and surface area. The threat of climate change could drastically affect their happiness score as they are located around multiple bodies of water. As sea levels rise, Bahrain is at risk for drastic weather events and flooding. This article allows us to look at the results of humanity’s actions and understand how and why ice continues to melt over the years. Ice that hasn’t endured a summer period is referred to as first-year ice. Ice that has endured multiple summer periods thickens at the core and becomes stronger due to the dilution of the salt concentration. As climate change becomes more prominent, temperatures will rise during summer periods and first-year ice will have a lower chance of surviving. Sea Ice has the capability to reflect harmful sunlight from contacting the Arctic and Atlantic Ocean as mentioned in the article. As the sea ice index decreases, more sunlight is absorbed by the waters, resulting in an increase in seawater temperatures and melting the ice quicker. The everlasting melting of the ice greatly affects the habitats and lifestyles of many species such as polar bears and seals. This warming of the climate leads to warmer winters and even hotter summers in the Arctic Ocean and an overall decrease in sea ice thickness. Arctic Amplification is a term that discusses the warming of the Arctic in comparison to the rest of the world. Studies show that warming in this region occurs roughly twice as fast as the global average. The increase in emissions and unsustainable electricity production highly amplifies the Arctic amplification significantly at an alarming rate as years go on. This means the effects of climate change are more drastic in the Arctic Ocean.  
+
+
+### **Conclusion**
+
+Looking at the analysis of Canada, the US, the UK, and China, we can identify that China produces the most emissions in all categories. China has seen a general increase in their emissions since 2009. This relates to melting sea ice because emissions build up in the atmosphere and warm the climate. Comparing China’s emissions to its happiness score (rank 74), we can prove our prediction: countries that produce more emissions and electricity in a non-sustainable way generally have a low happiness score. Canada and the United Kingdom have much lower emissions and produce more sustainable energy leading them to a higher happiness score on the rankings; at number 15 and 17 respectively. To lower the effect of climate, society must transform our daily activities and fuel production to more electricity-based consumption. When converting, there must be an emphasis on carbon-free electricity sources rather than carbon-emitting electricity, just as Canada has done since the 1980s. This will indirectly increase happiness scores as communities will be less worried about environmental issues and become content with their lifestyle and external environment. In conclusion, happiness scores are slightly influenced by climate change and the number of emissions and electricity produced by each country and their geographical region. 
